@@ -1,0 +1,189 @@
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('Заявка поставщикам')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function getData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  const priceSheet = ss.getSheetByName('Цены');
+  const supplierSheet = ss.getSheetByName('О поставщике');
+
+  if (!priceSheet) throw new Error('Лист "Цены" не найден');
+  if (!supplierSheet) throw new Error('Лист "О поставщике" не найден');
+
+  const priceData = priceSheet.getDataRange().getValues();
+  const supplierData = supplierSheet.getDataRange().getValues();
+
+  priceData.shift();
+  supplierData.shift();
+
+  const products = priceData
+    .map(row => ({
+      supplier: String(row[0] || '').trim(),
+      name: String(row[1] || '').trim(),
+      price: parseNumber(row[2]),
+      unit: String(row[3] || '').trim()
+    }))
+    .filter(item => item.supplier && item.name);
+
+  const suppliers = supplierData
+    .map(row => ({
+      name: String(row[0] || '').trim(),
+      contact: String(row[1] || '').trim(),
+      minOrder: parseNumber(row[2]),
+      terms: String(row[3] || '').trim()
+    }))
+    .filter(item => item.name);
+
+  return {
+    suppliers,
+    products
+  };
+}
+
+function submitOrder(order) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Продукты');
+
+  if (!sheet) throw new Error('Лист "Продукты" не найден');
+
+  if (!order || !order.items || !order.items.length) {
+    throw new Error('Заявка пустая');
+  }
+
+  const values = sheet.getDataRange().getValues();
+
+  const DATE_ROW = 2;       // строка с датами
+  const PRODUCT_COL = 3;    // колонка C с названием товара
+
+  const targetCol = findNearestFutureDateColumn(values[DATE_ROW - 1]);
+
+  if (!targetCol) {
+    throw new Error('Не найдена колонка с завтрашней или ближайшей будущей датой');
+  }
+
+  const notFoundProducts = [];
+
+  order.items.forEach(item => {
+    const productRow = findProductRow(values, item.name, PRODUCT_COL);
+
+    if (!productRow) {
+      notFoundProducts.push(item.name);
+      return;
+    }
+
+    const cell = sheet.getRange(productRow, targetCol);
+    const currentValue = parseNumber(cell.getValue());
+    const quantity = parseNumber(item.quantity);
+
+    cell.setValue(currentValue + quantity);
+  });
+
+  if (notFoundProducts.length) {
+    throw new Error(
+      'Некоторые товары не найдены на листе "Продукты": ' +
+      notFoundProducts.join(', ')
+    );
+  }
+
+  return {
+  success: true,
+  message: 'Заявка записана на лист "Продукты"',
+  url: ss.getUrl() + '#gid=' + sheet.getSheetId()
+};
+}
+
+function findNearestFutureDateColumn(dateRow) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  let nearestDate = null;
+  let nearestCol = null;
+
+  dateRow.forEach((value, index) => {
+    const date = parseDate(value);
+
+    if (!date) return;
+
+    date.setHours(0, 0, 0, 0);
+
+    if (date >= tomorrow) {
+      if (!nearestDate || date < nearestDate) {
+        nearestDate = date;
+        nearestCol = index + 1;
+      }
+    }
+  });
+
+  return nearestCol;
+}
+
+function findProductRow(values, productName, productCol) {
+  const target = normalizeText(productName);
+
+  for (let i = 0; i < values.length; i++) {
+    const current = normalizeText(values[i][productCol - 1]);
+
+    if (current === target) {
+      return i + 1;
+    }
+  }
+
+  return null;
+}
+
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .replace(/ё/g, 'е')
+    .toLowerCase();
+}
+
+function parseNumber(value) {
+  if (typeof value === 'number') return value;
+
+  return Number(
+    String(value || '')
+      .replace(/\s/g, '')
+      .replace('р.', '')
+      .replace('₽', '')
+      .replace(',', '.')
+      .replace(/[^\d.-]/g, '')
+  ) || 0;
+}
+
+function parseDate(value) {
+  if (value instanceof Date) {
+    return new Date(value);
+  }
+
+  if (typeof value === 'string') {
+    const clean = value.trim();
+
+    const parts = clean.split('.');
+
+    if (parts.length === 2) {
+      const day = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      const year = new Date().getFullYear();
+
+      return new Date(year, month, day);
+    }
+
+    if (parts.length === 3) {
+      const day = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      const year = Number(parts[2]);
+
+      return new Date(year, month, day);
+    }
+  }
+
+  return null;
+}
