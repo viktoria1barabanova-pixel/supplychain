@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --topbar-height: 0px;
+      --supplier-height: 0px;
+      --fixed-header-height: 0px;
+    }
+
+    html {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: none;
+      touch-action: pan-y;
+    }
+
+    body {
+      margin: 0;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111;
+      touch-action: pan-y;
+      overscroll-behavior-x: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+    }
+
+    input,
+    button,
+    textarea,
+    select {
+      font-size: 20px !important;
+      font-family: inherit;
+      touch-action: manipulation;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      margin: 0;
+      padding-bottom: 150px;
+      overflow-x: hidden;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      background: rgba(243,244,246,.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: max(8px, env(safe-area-inset-top)) 10px 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 7vw, 30px);
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -.2px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .summary-box {
+      background: #fff;
+      border-radius: 18px;
+      padding: 12px 13px;
+      min-width: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+
+    .summary-label {
+      font-size: clamp(14px, 4.2vw, 17px);
+      line-height: 1.1;
+      font-weight: 850;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: clamp(24px, 7.4vw, 32px);
+      line-height: 1;
+      font-weight: 950;
+      color: #111;
+      white-space: nowrap;
+    }
+
+    .status {
+      margin-top: 6px;
+      min-height: 16px;
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .supplier-buttons {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .supplier-buttons::-webkit-scrollbar {
+      display: none;
+    }
+
+    .supplier-btn {
+      flex: 0 0 auto;
+      border: 2px solid #d1d5db;
+      background: #fff;
+      border-radius: 999px;
+      padding: 13px 16px;
+      font-size: clamp(17px, 5vw, 21px) !important;
+      line-height: 1;
+      font-weight: 900;
+      color: #1a73e8;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .supplier-btn.active {
+      color: #111;
+      border: 3px solid #111;
+      padding: 12px 15px;
+    }
+
+    .supplier-btn.ready {
+      background: #dcfce7;
+      border-color: #22c55e;
+      color: #166534;
+    }
+
+    .content {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: hidden;
+      padding: 10px;
+    }
+
+    .supplier-card {
+      position: sticky;
+      top: var(--topbar-height);
+      z-index: 90;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      background: #fff;
+      border-radius: 22px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+      overscroll-behavior: contain;
+    }
+
+    .info-title {
+      margin: 0 0 10px;
+      font-size: clamp(18px, 5.4vw, 24px);
+      line-height: 1.1;
+      font-weight: 950;
+      color: #111;
+    }
+
+    .info-text {
+      font-size: clamp(16px, 4.8vw, 21px);
+      line-height: 1.35;
+      font-weight: 800;
+      color: #111;
+    }
+
+    .phone-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .phone-link {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 100%;
+      border-radius: 14px;
+      background: #eef3ff;
+      color: #0b57d0;
+      font-size: clamp(16px, 4.8vw, 20px) !important;
+      line-height: 1.2;
+      font-weight: 950;
+      text-decoration: none;
+      padding: 10px 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .products-card {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,.05);
+    }
+
+    .products-header,
+    .product-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 74px 48px 96px;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .products-header {
+      position: sticky;
+      top: calc(var(--topbar-height) + var(--supplier-height));
+      z-index: 70;
+      background: #fff;
+      padding: 11px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: clamp(13px, 3.8vw, 16px);
+      line-height: 1.05;
+      font-weight: 950;
+      color: #4b5563;
+      box-shadow: 0 2px 4px rgba(0,0,0,.03);
+      word-break: break-word;
+    }
+
+    .product-row {
+      min-height: 84px;
+      padding: 14px 10px;
+      border-bottom: 1px solid #edf0f2;
+    }
+
+    .product-row:nth-child(odd) {
+      background: #fbfbfc;
+    }
+
+    .product-row:nth-child(even) {
+      background: #ffffff;
+    }
+
+    .product-row:last-child {
+      border-bottom: none;
+    }
+
+    .product-name {
+      font-size: clamp(17px, 5vw, 22px);
+      line-height: 1.15;
+      font-weight: 950;
+      color: #111;
+      overflow-wrap: anywhere;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    .price,
+    .unit {
+      font-size: clamp(15px, 4.4vw, 19px);
+      line-height: 1.15;
+      font-weight: 900;
+      color: #111;
+    }
+
+    .quantity-input {
+      width: 96px;
+      max-width: 96px;
+      height: 58px;
+      border: 2px solid #c9cdd2;
+      border-radius: 16px;
+      background: #fff;
+      text-align: center;
+      font-size: 26px !important;
+      line-height: 58px;
+      font-weight: 950;
+      padding: 0;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      touch-action: manipulation;
+      transform: translateZ(0);
+      -webkit-text-size-adjust: none;
+    }
+
+    .quantity-input:focus {
+      border-color: #111;
+      box-shadow: 0 0 0 2px rgba(17,17,17,.12);
+    }
+
+    .submit-wrap {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 120;
+      display: grid;
+      gap: 8px;
+      padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(243,244,246,1) 82%, rgba(243,244,246,0));
+    }
+
+    .submit {
+      display: block;
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+      border: none;
+      border-radius: 18px;
+      background: #111;
+      color: #fff;
+      padding: 18px;
+      font-size: clamp(20px, 5.6vw, 24px) !important;
+      line-height: 1;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .history-btn {
+      display: block;
+      width: 100%;
+      max-width: 620px;
+      margin: 0 auto;
+      border: 2px solid #d1d5db;
+      border-radius: 18px;
+      background: #fff;
+      color: #111;
+      padding: 16px;
+      font-size: clamp(19px, 5.4vw, 23px) !important;
+      line-height: 1;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: none;
+      background: rgba(0,0,0,.42);
+      padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.open {
+      display: block;
+    }
+
+    .history-modal {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 12px 34px rgba(0,0,0,.24);
+    }
+
+    .history-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .history-title {
+      font-size: 20px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .history-close {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #111;
+      font-size: 24px !important;
+      line-height: 1;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .history-body {
+      padding: 12px;
+    }
+
+    .history-orders {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+
+    .history-orders::-webkit-scrollbar {
+      display: none;
+    }
+
+    .history-order-btn {
+      flex: 0 0 auto;
+      border: 1px solid #d1d5db;
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size: 15px !important;
+      line-height: 1;
+      font-weight: 850;
+      color: #1a73e8;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .history-order-btn.active {
+      color: #111;
+      border: 2px solid #111;
+      padding: 9px 11px;
+    }
+
+    .history-meta {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 14px;
+      background: #f9fafb;
+      font-size: 16px;
+      line-height: 1.35;
+      font-weight: 750;
+      color: #111;
+    }
+
+    .history-items {
+      display: grid;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 13px;
+      border: 1px solid #edf0f2;
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .history-item input {
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      accent-color: #111;
+    }
+
+    .history-item-name {
+      min-width: 0;
+      font-size: 17px;
+      line-height: 1.2;
+      font-weight: 850;
+      overflow-wrap: anywhere;
+    }
+
+    .history-item-qty {
+      font-size: 15px;
+      line-height: 1;
+      font-weight: 850;
+      color: #4b5563;
+      white-space: nowrap;
+    }
+
+    .history-empty {
+      padding: 18px 10px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 750;
+      text-align: center;
+    }
+
+    .submit:disabled {
+      background: #b8bcc2;
+      color: #fff;
+      cursor: not-allowed;
+    }
+
+    
+    @media (max-width: 520px) {
+      .app {
+        padding-bottom: 166px;
+      }
+
+      .top-bar {
+        padding: max(8px, env(safe-area-inset-top)) 8px 10px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .summary-box {
+        padding: 11px 10px;
+        border-radius: 16px;
+      }
+
+      .summary-label {
+        font-size: 14px;
+      }
+
+      .summary-value {
+        font-size: 25px;
+      }
+
+      .status {
+        font-size: 15px;
+        min-height: 18px;
+      }
+
+      .supplier-btn {
+        padding: 12px 14px;
+        font-size: 18px !important;
+      }
+
+      .supplier-btn.active {
+        padding: 11px 13px;
+      }
+
+      .supplier-card {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 13px;
+        border-radius: 18px;
+      }
+
+      .info-title {
+        margin-bottom: 6px;
+        font-size: 18px;
+      }
+
+      .info-text,
+      .phone-link {
+        font-size: 16px !important;
+      }
+
+      .products-header,
+      .product-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 62px 42px 82px;
+        gap: 6px;
+      }
+
+      .products-header {
+        position: sticky;
+        top: calc(var(--topbar-height) + var(--supplier-height));
+        z-index: 70;
+        padding: 10px 8px;
+        font-size: 13px;
+      }
+
+      .product-row {
+        min-height: 78px;
+        padding: 12px 8px;
+      }
+
+      .product-name {
+        font-size: 17px;
+        line-height: 1.15;
+      }
+
+      .price,
+      .unit {
+        font-size: 15px;
+      }
+
+      .quantity-input {
+        width: 82px;
+        max-width: 82px;
+        height: 54px;
+        border-radius: 15px;
+        font-size: 24px !important;
+        line-height: 54px;
+      }
+
+      .submit-wrap {
+        gap: 7px;
+      }
+
+      .submit {
+        padding: 17px;
+      }
+
+      .history-btn {
+        padding: 15px;
+      }
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      body {
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      input {
+        -webkit-user-select: text;
+        user-select: text;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="top-bar">
+      <h1>Заявка поставщикам</h1>
+
+      <div class="summary">
+        <div class="summary-box">
+          <div class="summary-label">Мин. заказ</div>
+          <div class="summary-value" id="minOrderTop">—</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">Итого</div>
+          <div class="summary-value" id="total">0 ₽</div>
+        </div>
+      </div>
+
+      <div class="status" id="minStatus"></div>
+      <div class="supplier-buttons" id="supplierButtons">Загрузка...</div>
+    </div>
+
+    <div class="content">
+      <div class="supplier-card" id="supplierInfo"></div>
+
+      <div class="products-card">
+        <div class="products-header">
+          <div>Наименование</div>
+          <div>Цена</div>
+          <div>Ед.</div>
+          <div>Кол-во</div>
+        </div>
+        <div id="productList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="submit-wrap">
+    <button class="submit" id="submitBtn" onclick="submitOrder()" disabled>
+      Отправить заявку
+    </button>
+    <button class="history-btn" type="button" onclick="openHistory()">
+      Прошлые заявки
+    </button>
+  </div>
+
+  <div class="modal-backdrop" id="historyModal" onclick="closeHistoryByBackdrop(event)">
+    <div class="history-modal">
+      <div class="history-head">
+        <div class="history-title">Последние 3 заявки</div>
+        <button class="history-close" type="button" onclick="closeHistory()">×</button>
+      </div>
+      <div class="history-body">
+        <div class="history-orders" id="historyOrders"></div>
+        <div id="historyDetails"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('gesturestart', function(event) {
+      event.preventDefault();
+    });
+
+    document.addEventListener('gesturechange', function(event) {
+      event.preventDefault();
+    });
+
+    document.addEventListener('gestureend', function(event) {
+      event.preventDefault();
+    });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(event) {
+      if (event.scale && event.scale !== 1) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('dblclick', function(event) {
+      event.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('focusin', function(event) {
+      if (event.target && event.target.classList && event.target.classList.contains('quantity-input')) {
+        freezeViewportOnInput(event.target);
+      }
+    });
+
+    document.addEventListener('focusout', function(event) {
+      if (event.target && event.target.classList && event.target.classList.contains('quantity-input')) {
+        setTimeout(resetViewportScale, 80);
+      }
+    });
+
+    function freezeViewportOnInput(input) {
+      resetViewportScale();
+
+      setTimeout(function() {
+        if (window.visualViewport && window.visualViewport.scale !== 1) {
+          resetViewportScale();
+        }
+      }, 80);
+    }
+
+    function resetViewportScale() {
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (!viewport) return;
+
+      viewport.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
+      );
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', function(event) {
+      if (!event.touches || !event.touches.length) return;
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(event) {
+      if (!event.touches || !event.touches.length) return;
+
+      const dx = Math.abs(event.touches[0].clientX - touchStartX);
+      const dy = Math.abs(event.touches[0].clientY - touchStartY);
+
+      if (dx > dy && dx > 8) {
+        event.preventDefault();
+      }
+    }, { passive: false });
+
+    function lockHorizontalScroll() {
+      document.documentElement.scrollLeft = 0;
+      document.body.scrollLeft = 0;
+      window.scrollTo(0, window.scrollY);
+    }
+
+    window.addEventListener('scroll', lockHorizontalScroll, { passive: true });
+    window.addEventListener('resize', lockHorizontalScroll);
+
+    window.addEventListener('resize', updateStickyOffsets);
+    window.addEventListener('orientationchange', function() {
+      setTimeout(updateStickyOffsets, 250);
+    });
+
+    let suppliers = [];
+    let products = [];
+    let selectedSupplier = null;
+    let quantities = {};
+    let recentOrders = [];
+    let selectedHistoryIndex = 0;
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!window.google || !google.script || !google.script.run) {
+        document.getElementById('supplierButtons').textContent = 'Откройте сайт через опубликованный Google Apps Script';
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(init)
+        .withFailureHandler(showError)
+        .getData();
+    });
+
+    function showError(error) {
+      const message = error && error.message ? error.message : 'Не удалось загрузить данные';
+      document.getElementById('supplierButtons').textContent = message;
+      alert(message);
+    }
+
+    function init(data) {
+      suppliers = data.suppliers || [];
+      products = data.products || [];
+
+      if (!suppliers.length) {
+        document.getElementById('supplierButtons').textContent = 'Поставщики не найдены';
+        return;
+      }
+
+      selectedSupplier = suppliers[0].name;
+      renderAll();
+    }
+
+    function renderAll() {
+      renderSupplierButtons();
+      renderSupplierInfo();
+      renderProducts();
+      updateTotal();
+      requestAnimationFrame(updateStickyOffsets);
+    }
+
+    function updateStickyOffsets() {
+      const topBar = document.querySelector('.top-bar');
+      const supplierCard = document.getElementById('supplierInfo');
+
+      const topBarHeight = topBar ? Math.ceil(topBar.getBoundingClientRect().height) : 0;
+      const supplierHeight = supplierCard ? Math.ceil(supplierCard.getBoundingClientRect().height + 10) : 0;
+
+      document.documentElement.style.setProperty('--topbar-height', topBarHeight + 'px');
+      document.documentElement.style.setProperty('--supplier-height', supplierHeight + 'px');
+    }
+
+    function renderSupplierButtons() {
+      const container = document.getElementById('supplierButtons');
+      container.innerHTML = '';
+
+      suppliers.forEach(supplier => {
+        const total = getSupplierTotal(supplier.name);
+        const btn = document.createElement('button');
+
+        btn.className = 'supplier-btn';
+
+        if (supplier.name === selectedSupplier) {
+          btn.classList.add('active');
+        }
+
+        if (total >= supplier.minOrder && total > 0) {
+          btn.classList.add('ready');
+        }
+
+        btn.textContent = supplier.name;
+
+        btn.onclick = () => {
+          selectedSupplier = supplier.name;
+          renderAll();
+          setTimeout(updateStickyOffsets, 120);
+        };
+
+        container.appendChild(btn);
+      });
+    }
+
+    function renderSupplierInfo() {
+      const supplier = suppliers.find(s => s.name === selectedSupplier);
+      const phones = extractPhones(supplier.contact);
+      const terms = escapeHtml(supplier.terms || '—').replace(/\n/g, '<br>');
+
+      document.getElementById('supplierInfo').innerHTML = `
+        <div>
+          <div class="info-title">Контакт</div>
+          <div class="phone-list">
+            ${renderPhoneLinks(phones, supplier.contact)}
+          </div>
+        </div>
+
+        <div>
+          <div class="info-title">О заявке</div>
+          <div class="info-text">${terms}</div>
+        </div>
+      `;
+      requestAnimationFrame(updateStickyOffsets);
+    }
+
+    function renderProducts() {
+      const container = document.getElementById('productList');
+      container.innerHTML = '';
+
+      getSelectedSupplierProducts().forEach(product => {
+        const key = getProductKey(product);
+        const quantity = quantities[key] || '';
+        const row = document.createElement('div');
+
+        row.className = 'product-row';
+
+        row.innerHTML = `
+          <div class="product-name">${escapeHtml(product.name)}</div>
+          <div class="price">${formatPrice(product.price)}</div>
+          <div class="unit">${escapeHtml(product.unit || '—')}</div>
+          <div>
+            <input
+              class="quantity-input quantity-field"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="next"
+              value="${quantity}"
+              onfocus="freezeViewportOnInput(this)"
+              oninput="setQuantity('${encodeURIComponent(key)}', this.value.replace(/[^0-9]/g, ''))"
+              onkeydown="handleEnter(event)"
+            >
+          </div>
+        `;
+
+        container.appendChild(row);
+      });
+      requestAnimationFrame(updateStickyOffsets);
+    }
+
+
+    function handleEnter(event) {
+      if (event.key !== 'Enter') return;
+
+      event.preventDefault();
+
+      const fields = [...document.querySelectorAll('.quantity-field')];
+      const index = fields.indexOf(event.target);
+
+      if (index < fields.length - 1) {
+        fields[index + 1].focus();
+        fields[index + 1].select();
+      } else {
+        document.getElementById('submitBtn').focus();
+      }
+    }
+
+    function setQuantity(key, value) {
+      key = decodeURIComponent(key);
+      quantities[key] = Number(value) || 0;
+      updateTotal();
+      renderSupplierButtons();
+    }
+
+    function updateTotal() {
+      const supplier = suppliers.find(s => s.name === selectedSupplier);
+      const total = getSupplierTotal(selectedSupplier);
+      const status = document.getElementById('minStatus');
+      const submitBtn = document.getElementById('submitBtn');
+
+      document.getElementById('minOrderTop').textContent = formatMoney(supplier.minOrder);
+      document.getElementById('total').textContent = formatMoney(total);
+
+      if (total === 0) {
+        status.textContent = '';
+        submitBtn.disabled = true;
+        return;
+      }
+
+      if (total < supplier.minOrder) {
+        status.textContent = 'До минималки: ' + formatMoney(supplier.minOrder - total);
+        submitBtn.disabled = true;
+        return;
+      }
+
+      status.textContent = 'Минималка соблюдена';
+      submitBtn.disabled = false;
+    }
+
+    function submitOrder() {
+      const supplier = suppliers.find(s => s.name === selectedSupplier);
+      const total = getSupplierTotal(selectedSupplier);
+
+      if (total < supplier.minOrder) return;
+
+      const items = getSelectedSupplierProducts()
+        .map(product => {
+          const key = getProductKey(product);
+          const quantity = quantities[key] || 0;
+
+          return {
+            name: product.name,
+            quantity
+          };
+        })
+        .filter(item => item.quantity > 0);
+
+      google.script.run
+        .withSuccessHandler(response => {
+          const open = confirm(response.message + '\n\nОткрыть таблицу для проверки?');
+
+          if (open && response.url) {
+            window.open(response.url, '_blank');
+          }
+
+          items.forEach(item => {
+            quantities[selectedSupplier + '__' + item.name] = 0;
+          });
+
+          recentOrders = [];
+          selectedHistoryIndex = 0;
+          renderAll();
+        })
+        .withFailureHandler(error => {
+          alert(error.message);
+        })
+        .submitOrder({
+          supplier: selectedSupplier,
+          items
+        });
+    }
+
+    function openHistory() {
+      const modal = document.getElementById('historyModal');
+      modal.classList.add('open');
+      document.body.classList.add('modal-open');
+      renderHistoryLoading();
+
+      google.script.run
+        .withSuccessHandler(data => {
+          recentOrders = Array.isArray(data) ? data.slice(0, 3) : [];
+          selectedHistoryIndex = 0;
+          renderHistory();
+        })
+        .withFailureHandler(error => {
+          document.getElementById('historyOrders').innerHTML = '';
+          document.getElementById('historyDetails').innerHTML = `
+            <div class="history-empty">${escapeHtml(error.message || 'Не удалось загрузить прошлые заявки')}</div>
+          `;
+        })
+        .getRecentOrders(selectedSupplier, 3);
+    }
+
+    function closeHistory() {
+      document.getElementById('historyModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    function closeHistoryByBackdrop(event) {
+      if (event.target.id === 'historyModal') {
+        closeHistory();
+      }
+    }
+
+    function renderHistoryLoading() {
+      document.getElementById('historyOrders').innerHTML = '';
+      document.getElementById('historyDetails').innerHTML = `
+        <div class="history-empty">Загружаем прошлые заявки...</div>
+      `;
+    }
+
+    function renderHistory() {
+      renderHistoryOrders();
+      renderHistoryDetails();
+    }
+
+    function renderHistoryOrders() {
+      const container = document.getElementById('historyOrders');
+      container.innerHTML = '';
+
+      if (!recentOrders.length) return;
+
+      recentOrders.forEach((order, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'history-order-btn';
+
+        if (index === selectedHistoryIndex) {
+          btn.classList.add('active');
+        }
+
+        btn.textContent = formatHistoryDate(order.date || order.createdAt || order.timestamp);
+        btn.onclick = () => {
+          selectedHistoryIndex = index;
+          renderHistory();
+        };
+
+        container.appendChild(btn);
+      });
+    }
+
+    function renderHistoryDetails() {
+      const details = document.getElementById('historyDetails');
+
+      if (!recentOrders.length) {
+        details.innerHTML = '<div class="history-empty">Пока нет прошлых заявок по этому поставщику</div>';
+        return;
+      }
+
+      const order = recentOrders[selectedHistoryIndex];
+      const items = Array.isArray(order.items) ? order.items : [];
+
+      details.innerHTML = `
+        <div class="history-meta">
+          <div>Поставщик: ${escapeHtml(order.supplier || selectedSupplier || '—')}</div>
+          <div>Дата: ${escapeHtml(formatHistoryDate(order.date || order.createdAt || order.timestamp))}</div>
+          ${order.total ? `<div>Сумма: ${formatMoney(order.total)}</div>` : ''}
+          <div>Отметьте позиции, которые приехали фактически</div>
+        </div>
+        <div class="history-items">
+          ${items.length ? items.map((item, index) => renderHistoryItem(order, item, index)).join('') : '<div class="history-empty">В заявке нет позиций</div>'}
+        </div>
+      `;
+    }
+
+    function renderHistoryItem(order, item, index) {
+      const checked = item.delivered ? 'checked' : '';
+      const orderId = order.id || order.orderId || order.date || selectedHistoryIndex;
+
+      return `
+        <label class="history-item">
+          <input
+            type="checkbox"
+            ${checked}
+            onchange="toggleDelivered('${encodeURIComponent(orderId)}', ${index}, this.checked)"
+          >
+          <span class="history-item-name">${escapeHtml(item.name || 'Без названия')}</span>
+          <span class="history-item-qty">${escapeHtml(String(item.quantity || 0))} ${escapeHtml(item.unit || '')}</span>
+        </label>
+      `;
+    }
+
+    function toggleDelivered(orderId, itemIndex, delivered) {
+      orderId = decodeURIComponent(orderId);
+      const order = recentOrders[selectedHistoryIndex];
+
+      if (!order || !order.items || !order.items[itemIndex]) return;
+
+      order.items[itemIndex].delivered = delivered;
+
+      google.script.run
+        .withFailureHandler(error => {
+          order.items[itemIndex].delivered = !delivered;
+          renderHistoryDetails();
+          alert(error.message || 'Не удалось сохранить отметку');
+        })
+        .updateDeliveredItem(orderId, itemIndex, delivered);
+    }
+
+    function formatHistoryDate(value) {
+      if (!value) return 'Без даты';
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return String(value);
+      }
+
+      return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getSelectedSupplierProducts() {
+      return products.filter(p => p.supplier === selectedSupplier);
+    }
+
+    function getSupplierTotal(supplierName) {
+      return products
+        .filter(p => p.supplier === supplierName)
+        .reduce((sum, product) => {
+          const key = getProductKey(product);
+          return sum + (quantities[key] || 0) * normalizeNumber(product.price);
+        }, 0);
+    }
+
+    function getProductKey(product) {
+      return product.supplier + '__' + product.name;
+    }
+
+    function extractPhones(value) {
+      const text = String(value || '');
+      const phoneRegex = /(?:\+?7|8)?[\s\-\(\)]*\d{3}[\s\-\(\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/g;
+      const matches = [...text.matchAll(phoneRegex)];
+
+      return matches.map((match, index) => {
+        const raw = match[0].trim();
+        const digits = raw.replace(/\D/g, '');
+        let phone = digits;
+
+        if (phone.length === 10) {
+          phone = '7' + phone;
+        }
+
+        if (phone.length === 11 && phone[0] === '8') {
+          phone = '7' + phone.slice(1);
+        }
+
+        const start = match.index + match[0].length;
+        const end = matches[index + 1] ? matches[index + 1].index : text.length;
+        const label = text
+          .slice(start, end)
+          .split(/[\n,;]/)[0]
+          .replace(/^\s*-\s*/, '')
+          .trim();
+
+        return {
+          href: '+' + phone,
+          label: label ? `${raw} — ${label}` : raw
+        };
+      });
+    }
+
+    function renderPhoneLinks(phones, fallback) {
+      if (!phones.length) {
+        return `<span>${escapeHtml(fallback || '—')}</span>`;
+      }
+
+      return phones
+        .map(phone => `<a href="tel:${escapeHtml(phone.href)}" class="phone-link" target="_top" onclick="callPhone('${escapeJs(phone.href)}'); return false;">☎ ${escapeHtml(phone.label)}</a>`)
+        .join('');
+    }
+
+    function callPhone(phone) {
+      window.top.location.href = 'tel:' + phone;
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+        maximumFractionDigits: 0
+      }).format(normalizeNumber(value));
+    }
+
+    function formatPrice(value) {
+      return new Intl.NumberFormat('ru-RU', {
+        maximumFractionDigits: 0
+      }).format(normalizeNumber(value));
+    }
+
+    function normalizeNumber(value) {
+      if (typeof value === 'number') return value;
+
+      return Number(String(value || '0').replace(/\s/g, '').replace(',', '.')) || 0;
+    }
+
+    function escapeJs(value) {
+      return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
