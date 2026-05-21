@@ -2,7 +2,7 @@
 <html>
 <head>
   <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <style>
     * {
       box-sizing: border-box;
@@ -11,7 +11,6 @@
 
     :root {
       --topbar-height: 0px;
-      --supplier-height: 0px;
       --fixed-header-height: 0px;
     }
 
@@ -172,8 +171,6 @@
     }
 
     .supplier-card {
-      position: sticky;
-      top: var(--topbar-height);
       z-index: 90;
       display: grid;
       grid-template-columns: 1fr;
@@ -262,7 +259,7 @@
 
     .products-header {
       position: sticky;
-      top: calc(var(--topbar-height) + var(--supplier-height));
+      top: var(--topbar-height);
       z-index: 70;
       background: #fff;
       padding: 11px 10px;
@@ -608,7 +605,7 @@
 
       .products-header {
         position: sticky;
-        top: calc(var(--topbar-height) + var(--supplier-height));
+        top: var(--topbar-height);
         z-index: 70;
         padding: 10px 8px;
         font-size: 13px;
@@ -754,38 +751,6 @@
       event.preventDefault();
     }, { passive: false });
 
-    document.addEventListener('focusin', function(event) {
-      if (event.target && event.target.classList && event.target.classList.contains('quantity-input')) {
-        freezeViewportOnInput(event.target);
-      }
-    });
-
-    document.addEventListener('focusout', function(event) {
-      if (event.target && event.target.classList && event.target.classList.contains('quantity-input')) {
-        setTimeout(resetViewportScale, 80);
-      }
-    });
-
-    function freezeViewportOnInput(input) {
-      resetViewportScale();
-
-      setTimeout(function() {
-        if (window.visualViewport && window.visualViewport.scale !== 1) {
-          resetViewportScale();
-        }
-      }, 80);
-    }
-
-    function resetViewportScale() {
-      const viewport = document.querySelector('meta[name="viewport"]');
-      if (!viewport) return;
-
-      viewport.setAttribute(
-        'content',
-        'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'
-      );
-    }
-
     let touchStartX = 0;
     let touchStartY = 0;
 
@@ -867,13 +832,9 @@
 
     function updateStickyOffsets() {
       const topBar = document.querySelector('.top-bar');
-      const supplierCard = document.getElementById('supplierInfo');
-
       const topBarHeight = topBar ? Math.ceil(topBar.getBoundingClientRect().height) : 0;
-      const supplierHeight = supplierCard ? Math.ceil(supplierCard.getBoundingClientRect().height + 10) : 0;
 
       document.documentElement.style.setProperty('--topbar-height', topBarHeight + 'px');
-      document.documentElement.style.setProperty('--supplier-height', supplierHeight + 'px');
     }
 
     function renderSupplierButtons() {
@@ -953,7 +914,6 @@
               spellcheck="false"
               enterkeyhint="next"
               value="${quantity}"
-              onfocus="freezeViewportOnInput(this)"
               oninput="setQuantity('${encodeURIComponent(key)}', this.value.replace(/[^0-9]/g, ''))"
               onkeydown="handleEnter(event)"
             >
